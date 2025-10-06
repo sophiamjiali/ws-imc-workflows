@@ -2,8 +2,8 @@
 
 This repository provides reproducible workflows for imaging mass cytometry (WS-IMC) data preprocessing and analysis, including:
 
-### **1. Tissue Mask Generation:** creates binary masks using dynamic thresholding methods (Otsu or GuassianMixture Models) with optional small obkect removal and hole filling
-### **2. Patch Extraction:** generates image patches for downstream analysis, with flexible marker selection, size, and stride
+**1. Tissue Mask Generation:** creates binary masks using dynamic thresholding methods (Otsu or GuassianMixture Models) with optional small obkect removal and hole filling
+**2. Patch Extraction:** generates image patches for downstream analysis, with flexible marker selection, size, and stride
 
 Features include:
 - YAML-based configuration for all input/output paths and parameters
