@@ -1,21 +1,9 @@
-#!/usr/bin/env python3
-
-import re
-import numpy as np
-import pandas as pd
-import argparse
-import yaml
-import os
 from pathlib import Path
-import sys
-import xarray as xr
+import yaml
+import pandas as pd
 from readimc import MCDFile
-
-from sklearn.mixture import GaussianMixture
-from skimage.filters import threshold_otsu
-from skimage import morphology, measure, exposure
-from skimage.measure import find_contours
-from skimage.morphology import remove_small_objects, remove_small_holes 
+import xarray as xr
+import os
 
 def load_input_paths(input_path):
     # Loads and returns a list of .mcd file paths
@@ -126,91 +114,56 @@ def load_mask_generation_panel(config, panel):
 
     # Fetch the tissue mask generation markers if provided
     mask_panel = panel.copy()
+    mask_markers = config.get('mask_generation_markers', [])
 
-    mask_markers = config.get('mask_generation_markers, []')
+    # Subset for the provided mask markers, else use all markers present
     if mask_markers:
         mask_panel = mask_panel[mask_panel['marker'].isin(mask_markers)]
     
     return mask_panel
 
-
-def generate_mask():
+def save_tissue_mask(tissue_mask, image_name, config):
+    # Saves the provided tissue mask using the name of the image with a 
+    # '_mask.tiff' suffix to the output folder specified in the configurations
     return
 
-def parse_arguments():
-    # Parses and returns command-line arguments
+def save_mask_metadata(metadata, image_name, config):
+    # Saves the provided metadata as a CSV using the name of the image with 
+    # a '_mask_metadata.csv' suffix to the output folder specified in the 
+    # configurations
 
-    parser = argparse.ArgumentParser(
-        description = "Generate tissue masks from WS-IMC images."
-    )
-    parser.add_argument("--input", type = str, required = True, 
-                        help = "Path to input folder")
-    parser.add_argument("--output", type = str, required = True,
-                        help = "Path to output folder")
-    parser.add_argument("--config", type = str, default = 'config.yaml',
-                        help = "Path to configuration file")
-    parser.add_argument("--panel", type = str, required = True,
-                        help = "Path to panel")
-    parser.add_argument("--threshold-method", type = str, 
-                        choices = ['otsu', 'gmm'], default = 'otsu'
-                        help = "Thresholding method to determine a tissue threshold for the tissue mask: 'otsu', or 'gmm'")
-    parser.add_argument("--remove-small-objects", type = bool, default = True,
-                        help = "Remove small objects from the tissue mask")
-    parser.add_argument("--fill-small-holes", type = bool, default = True,
-                        help = "Fill small holes in the tissue mask")
-    return parser.parse_args()
+    # If a metadata folder was not provided, create one
+    metadata_folder = config.get('paths', {}).get('metadata_folder', None)
 
+    if not metadata_folder:
+        metadata_folder = os.path.join(
+            os.path.join(config['paths']['output_folder']), 'metadata'
+        ).mkdir(parents = True, exist_ok = True)
 
-def main():
+        print("No metadata folder specified in the configuration. Using" +
+              f"default {metadata_folder}.")
+        
+    # Save the metadata as a CSV in the folder
+    out_path = os.path.join(metadata_folder, image_name + "_metadata.csv")
+    metadata.to_csv(out_path, index = False)
+        
 
-    # Parse command-line arguments
-    args = parse_arguments()
-    
-    # Load configurations
-    config = load_config(args.config)
+def save_mask_qc(qc_plot, image_name, config):
+    # Saves the provided quality control plot as a PNG using the name of the
+    # image with a '_qc.png' suffix to the output folder specified in the
+    # configurations
 
-    # Load input paths
-    mcd_files = load_input_paths(args.input)
+    # If a quality control folder was not provided, create one
+    qc_folder = config.get('paths', {}).get('qc_folder', None)
 
-    # Load the panel
-    panel = load_panel(args.panel, mcd_files[0], config)
+    if not qc_folder:
+        qc_folder = os.path.join(
+            os.path.join(config['paths']['output_folder']), 'qc'
+        ).mkdir(parents = True, exist_ok = True)
 
-    # Fetch mask generation markers if provided
-    mask_panel = load_mask_generation_panel(config, panel)
-    mask_metals = mask_panel['metal_tag'].tolist()
-
-    # Generate a tissue mask for each input image
-    for path in mcd_files:
-
-        # Load the image and filter for markers used for mask generation
-        image = load_image(path)
-        composite = image.sel(metal_tag = mask_metals)
-
-        # Dynamically generate a tissue threshold for the image
-        if args.threshold_method == 'otsu':
-            threshold = determine_otsu_tissue_threshold(composite, config)
-        else: # GMM
-            threshold = determine_gmm_tissue_threshold(composite, config)
-
-
-def determine_otsu_tissue_threshold(composite, config):
-    # Determines and returns a global intensity threshold to separate tissue 
-    # from background using Otsu's method
-
-    # Fetch thresholds from the configurations
-    clip_percentile = config.get('clip_percentile')
-
-    # Clip extreme pixels of high intensity per channel
-    clipped_channels = np.array([
-        np.minimum(
-            composite.sel(metal_tag = metal_tag).values,
-            np.percentile(
-                composite.sel(metal_tag, metal_tag).values, clip_percentile
-            )
-        ) for metal_tag in composite.metal_tag.values
-    ])
-    return
-
-def determine_gmm_tissue_threshold(composite, config):
-    # Determines and returns a global intensity threshold to separate tissue 
-    # from background using a 2-component GaussianMixture Model (GMM) approach
+        print("No quality control (qc) folder specified in teh configuration." +
+              f" Using default {qc_folder}.")
+        
+    # Save the QC plot as a PNG in the folder
+    out_path = os.path.join(qc_folder, image_name + "_qc.png")
+    image_name ...

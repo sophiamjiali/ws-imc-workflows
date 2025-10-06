@@ -1,0 +1,56 @@
+seed: 42
+
+paths:
+  # Required
+  input_folder:
+  output_folder: 
+  panel_file: 
+
+  # Non-required: defaults exist
+  metadata_folder: 
+  mask_metadata_folder:
+  mask_qc_folder: 
+
+preprocessing:
+
+  # Non-required: defaults exist
+  toggles:
+    apply_background_stain_removal: true
+    apply_hot_pixel_removal: true
+    apply_striping_removal: true
+    apply_denoising: true
+    apply_background_subtraction: true
+    apply_winsorization: true
+    apply_min_max_scaling: true
+
+  # Non-required: defaults exist
+  background_stains: [...]
+
+  hot_pixel:
+    window_size:
+    z_score_threshold:
+
+  striping:
+    direction: 
+    size: 
+
+  denoising:
+    cofactor:
+
+  background_subtraction:
+    percentile: 
+  winsorization:
+    limits:
+
+
+tissue_mask:
+
+  # Required
+  mask_generation_markers: [...]
+
+  # Non-required: defaults exist
+  small_object_threshold: 50
+  small_hole_threshold: 50
+
+  rgb_markers: [...]
+  
