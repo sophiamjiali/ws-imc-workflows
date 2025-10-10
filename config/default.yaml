@@ -1,20 +1,21 @@
 
+# Required field
 seed: 42
 
 paths:
 
-  # Required
+  # Required fields
   input_folder: data/raw
   output_folder: results/masks
   panel_file: data/panels/ws_panel.csv
-
-  # Non-required: defaults exist
+  
+  # Not required, defaults provided: only if metadata and/or QC are enabled
   mask_metadata_folder: results/mask_metadata
   mask_qc_folder: results/mask_qc
 
+# Not required, defaults provided: only if preprocessing is enabled
 preprocessing:
 
-  # Non-required: defaults exist
   toggles:
     apply_background_stain_removal: true
     apply_hot_pixel_removal: true
@@ -24,12 +25,6 @@ preprocessing:
     apply_winsorization: true
     apply_min_max_scaling: true
 
-  rgb_markers:
-    - pan_cytokeratin
-    - cd45
-    - col1a2
-
-  # Non-required: defaults exist
   background_stains: 
     - pnad
 
@@ -53,7 +48,7 @@ preprocessing:
 
 tissue_mask:
 
-  # Required
+  # Not required: can be left empty and full panel will be used
   mask_generation_markers: 
     - pan_cytokeratin
     - vimentin
@@ -65,11 +60,12 @@ tissue_mask:
     - fap
     - cd31
 
-  # Non-required: defaults exist
+  # Not required, defaults provided: only if functions are toggled
   min_tissue_threshold: 0
   small_object_threshold: 50
   small_hole_threshold: 50
 
+  # Not required: only if QC plots are enabled
   rgb_markers:
     - pan_cytokeratin
     - cd45
