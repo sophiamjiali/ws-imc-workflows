@@ -1,13 +1,40 @@
-# Whole-slide Imaging Mass Cytometry (WS-IMC) Workflows
+# Whole-slide IMC Workflows
 
-This repository provides reproducible workflows for imaging mass cytometry (WS-IMC) data preprocessing and analysis, including:
+This repository provides a lightweight workflow for generating tissue masks from imaging mass cytometry (IMC) data preprocessing and analysis, including:
 
-**1. Tissue Mask Generation:** creates binary masks using dynamic thresholding methods (Otsu or GuassianMixture Models) with optional small obkect removal and hole filling
+**1. Tissue Mask Generation:** creates binary masks using dynamic thresholding methods (Otsu or 2-component GuassianMixture Models) with optional small obkect removal and hole filling
 
 **2. Patch Extraction:** generates image patches for downstream analysis, with flexible marker selection, size, and stride
 
-Features include:
-- YAML-based configuration for all input/output paths and parameters
-- Shared utilities for loading images, panel files, and metadata
-- Quality control visualization of masks overlaid on original images
-- Metadata recording per image for reproducibility and downstream analysis
+**3. Preprocessing:** includes customizable standardized preprocessing (normalization, scaling, channel selection) automatically applied if not already performed
+
+## Table of Contents
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Arguments](#arguments)
+- [Outputs](#outputs)
+
+## Installation
+
+### Using Conda
+'''
+git clone https://github.com/sophiamjiali/ws_imc_workflows.git
+cd ws_imc_workflows
+conda env create -f environment.yml
+conda activate ws_imc_workflows_env
+'''
+
+### Using pip
+'''
+python -m pip install -r requirements.txt
+'''
+
+## Configuration
+
+## Usage
+
+## Arguments
+
+## Outputs
+

@@ -1,0 +1,20 @@
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# Conda environment files
+env/
+*.conda
+*.yml
+*.lock
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Input and Output folders
+data/
+results/
+
+# System files
+.DS_Store

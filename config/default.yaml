@@ -1,14 +1,16 @@
+
 seed: 42
 
 paths:
+
   # Required
-  input_folder: datasets/input
-  output_folder: datasets/output
-  panel_file: datasets/ws_panel.csv
+  input_folder: data/raw
+  output_folder: results/masks
+  panel_file: data/panels/ws_panel.csv
 
   # Non-required: defaults exist
-  mask_metadata_folder: datasets/mask_metadata
-  mask_qc_folder: datasets/mask_qc
+  mask_metadata_folder: results/mask_metadata
+  mask_qc_folder: results/mask_qc
 
 preprocessing:
 

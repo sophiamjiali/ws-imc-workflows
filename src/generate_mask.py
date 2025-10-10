@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
+"""
+Script:          generate_mask.py
+Purpose:         Generates tissue masks, metadata, and QC plots
+Author:          Sophia Li
+Affiliation:     Campbell Lab
+Date:            010-03-2025
+"""
 
 import argparse
-
+from utils.preprocessing import preprocess_image
 from utils.io_utils import (
     load_input_paths, 
     load_config, 
@@ -18,7 +25,6 @@ from utils.mask_utils import (
     generate_tissue_mask,
     generate_mask_qc_plot
 )
-from utils.preprocessing import preprocess_image
 
 
 def parse_arguments():
@@ -28,7 +34,7 @@ def parse_arguments():
         description = "Generate tissue masks from WS-IMC images."
     )
 
-    parser.add_argument("--config", type = str, default = 'config.yaml',
+    parser.add_argument("--config", type = str, required = True,
                         help = "Path to configuration file")
     parser.add_argument("--threshold-method", type = str, 
                         choices = ['otsu', 'gmm'], default = 'otsu',
@@ -37,11 +43,11 @@ def parse_arguments():
                         help = "Remove small objects from the tissue mask")
     parser.add_argument("--fill-small-holes", type = bool, default = True,
                         help = "Fill small holes in the tissue mask")
-    parser.add_argument("--saveimetadata", type = bool, default = True,
+    parser.add_argument("--save-metadata", type = bool, default = True,
                         help = "Save metadata associated with mask generation")
     parser.add_argument("--save-qc", type = bool, default = True, 
                         help = "Save quality control plots visualizing tissue mask coverage")
-    parser.add_argument('--preprocess_images', type = bool, default = True,
+    parser.add_argument('--preprocess-images', type = bool, default = True,
                         help = "Preprocess the images in the input folder")
     return parser.parse_args()
 
@@ -51,7 +57,7 @@ def main():
     # Initialize the environment and parse user configurations
     args = parse_arguments()
     config = load_config(args.config)
-    img_files, file_type = load_input_paths(args.input)
+    img_files, file_type = load_input_paths(config)
     panel = load_panel(img_files[0], file_type, config)
 
     # Fetch mask generation markers if provided
@@ -60,13 +66,13 @@ def main():
 
     # Generate a tissue mask for each input image
     for path in img_files:
-        image_name = path.name
+        img_name = path.stem
 
         # Load the image
-        image = load_image(path, file_type, panel)
+        img = load_image(path, file_type, panel)
 
         # Filter for markers used for mask generation
-        composite = image.sel(channel = image['metal_tag'].isin(mask_metals))
+        composite = img.sel(channel = img['metal_tag'].isin(mask_metals))
 
         # Preprocess the image if toggled
         if args.preprocess_images:
@@ -89,19 +95,21 @@ def main():
         )
 
         # Save the mask as the image's filename with '_mask.tiff' suffix
-        save_tissue_mask(mask, image_name, config)
+        save_tissue_mask(mask, img_name, config)
 
         # Save the mask generation metadata if toggled
         if args.save_metadata:
             metadata = {**threshold_metadata, **mask_metadata}
-            save_mask_metadata(metadata, image_name, config)
+            save_mask_metadata(metadata, img_name, config)
 
         # Generate and save a quality control (QC) plot if toggled
         if args.save_qc:
             qc_plot = generate_mask_qc_plot(
-                mask, composite, image_name, threshold_metadata, 
-                mask_metadata, config
+                mask, composite, img_name, mask_panel,
+                threshold_metadata, mask_metadata, config
             )
-            save_mask_qc(qc_plot, image_name, config)
+            save_mask_qc(qc_plot, img_name, config)
 
 
+if __name__ == '__main__':
+    main()

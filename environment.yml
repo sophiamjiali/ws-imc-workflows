@@ -1,0 +1,17 @@
+name: ws_imc_workflows_env
+channels: 
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - scikit-image
+  - xarray
+  - pyyaml
+  - tifffile
+  - pip
+  - pip:
+    - readimc

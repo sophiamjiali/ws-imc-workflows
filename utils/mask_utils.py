@@ -13,8 +13,7 @@ from sklearn.mixture import GaussianMixture
 from skimage.filters import threshold_otsu
 from sklearn.exceptions import ConvergenceWarning
 from skimage.morphology import remove_small_objects, remove_small_holes 
-from utils.io_utils import canonicalize_markers
-
+import matplotlib.gridspec as gridspec
 
 def determine_otsu_tissue_threshold(composite, config):
     # Determines and returns a global intensity threshold to separate tissue 
@@ -51,8 +50,16 @@ def determine_gmm_tissue_threshold(composite, config):
     seed = config.get('seed', 42)
 
     # Aggregate across channels using the median and flatten to pixels
-    composite = np.median(composite, axis = 0)
-    pixels = composite.flatten().reshape(-1, 1)
+    composite = np.max(composite, axis = 0)
+    pixels = composite.values.flatten().reshape(-1, 1)
+
+    # # Cip extreme outliers that may skew background Gaussian
+    # pixels = np.clip(
+    #     pixels, np.percentile(pixels, 1), np.percentile(pixels, 99)
+    # )
+    
+    # Ignore background to avoid skewing towards lower values
+    pixels = pixels[pixels > 0.01].reshape(-1, 1)
 
     try:
         # Fit a 2-component GaussianMixture Model (GMM)
@@ -73,13 +80,17 @@ def determine_gmm_tissue_threshold(composite, config):
 
         # Enforce a minimum tissue threshold safeguard upon the intersection
         threshold = max(threshold, min_tissue_threshold)
+        #threshold = max(threshold, np.percentile(pixels, 50))
         metadata = {
             'method': 'gmm',
             'threshold': threshold,
             'min_threshold': min_tissue_threshold,
-            'gmm_means': means.tolist(),
-            'gmm_stds': stds.tolist(),
-            'gmm_weights': weights.tolist()
+            'gmm_means_1': means[0],
+            'gmm_means_2': means[1],
+            'gmm_stds_1': stds[0],
+            'gmm_stds_2': stds[1],
+            'gmm_weights_1': weights[0],
+            'gmm_weights_2': weights[1]
         }
     
     except(ConvergenceWarning, ValueError) as e:
@@ -185,19 +196,51 @@ def generate_mask_qc_plot(mask, composite, image_name, mask_panel,
     ).values
     composite = np.transpose(composite, (1, 2, 0))
 
-    # Plot and return the figure
-    fig, ax = plt.subplots(figsize = (8, 8))
-    ax.imshow(composite, cmap = 'gray')
-    ax.imshow(mask, cmap = 'Reds', alpha = 0.3)
+    # Plot and return the figure: image on the left, overlaid on the right
+    fig = plt.figure(figsize = (14, 7))
+    gs = gridspec.GridSpec(1, 2, figure = fig, width_ratios = [1, 1], 
+                           wspace = 0.01, left = 0.1, right = 0.9, top = 0.9)  
     
-    plt.set_title(f"Tissue Mask QC - {image_name}")
+    ax0, ax1 = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
 
-    # Build a caption based on the threshold method metadata
-    ax.text(0.02, 0.98, 
-                f"Method: GMM\nThreshold: {threshold_metadata['threshold']}\nCoverage: {mask_metadata['mask_coverage_percent']}",
-                fontsize = 10, color = 'white', transform = plt.gca().transAxes, verticalalignment = 'top', bbox = dict(facecolor = 'black', alpha = 0.5)
+    # Left: composite image only
+    ax0.imshow(composite)
+    ax0.axis('off')
+    ax0.set_position([0.152, 0.1, 0.38, 0.78])
+
+    # Right: composite with tissue mask overlaid in transparent red
+    overlay = np.zeros((*mask.shape, 4))
+    overlay[mask > 0] = [1, 0, 0, 0.4]
+    ax1.imshow(composite)
+    ax1.imshow(overlay)
+    ax1.axis('off')
+    ax1.set_position([0.4855, 0.1, 0.38, 0.78])
+
+    # Set titles and subplot titles
+    fig.text(0.5, 0.925, f"Tissue Mask QC - {image_name}", 
+             ha = 'center', va = 'top', fontsize = 16,
+             transform = fig.transFigure)
+    fig.text(ax0.get_position().x0 + ax0.get_position().width / 2, 0.065, 
+             "Composite", ha = 'center', fontsize = 12)
+    fig.text(ax1.get_position().x0 + ax1.get_position().width / 2, 0.065, 
+             "Composite with Mask Overlay", ha = 'center', fontsize = 12)
+    
+    # Build metadata and RGB marker captions
+    threshold_caption = (
+        f"Method: {threshold_metadata['method']}    "
+        f"Threshold: {threshold_metadata['threshold']:.4f}  "
+        f"Coverage: {mask_metadata['mask_coverage_percent']:.2f}%"
+    )
+    rgb_caption = (
+        f"Red: {rgb_markers[0]} ({rgb_metal_tags[0]})   "
+        f"Green: {rgb_markers[1]} ({rgb_metal_tags[1]})     "
+        f"Blue: {rgb_markers[2]} ({rgb_metal_tags[2]})"
     )
 
-    ax.axis('off')
+    fig.text(0.32, 0.03, threshold_caption, ha = 'center',
+             fontsize = 9, color = 'black')
+    fig.text(0.65, 0.03, rgb_caption, ha = 'center',
+             fontsize = 9, color = 'black')
 
-    return plt
+    #fig.tight_layout(rect = [0, 0.08, 1, 0.90])
+    return fig
