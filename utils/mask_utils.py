@@ -13,19 +13,23 @@ from sklearn.mixture import GaussianMixture
 from skimage.filters import threshold_otsu
 from sklearn.exceptions import ConvergenceWarning
 from skimage.morphology import remove_small_objects, remove_small_holes 
+from utils.io_utils import canonicalize_markers
 
 
 def determine_otsu_tissue_threshold(composite, config):
     # Determines and returns a global intensity threshold to separate tissue 
     # from background using Otsu's method
 
+    # Extract the values of the xarray composite
+    composite = composite.values
+
     # Fetch configurations
     min_tissue_threshold = (config
-                            .get('preprocessing', {})
+                            .get('tissue_mask', {})
                             .get('min_tissue_threshold', 0))
     
     # Generate the threshold using Otsu's method and enforce a minimum
-    threshold = threshold_otsu(composite)
+    threshold = threshold_otsu(composite.flatten())
     threshold = max(threshold, min_tissue_threshold)
     metadata = {
         'method': 'otsu',
@@ -42,13 +46,13 @@ def determine_gmm_tissue_threshold(composite, config):
 
     # Fetch configurations
     min_tissue_threshold = (config
-                            .get('preprocessing', {})
+                            .get('tissue_mask', {})
                             .get('min_tissue_threshold', 0))
     seed = config.get('seed', 42)
 
     # Aggregate across channels using the median and flatten to pixels
     composite = np.median(composite, axis = 0)
-    pixels = composite.flatten()
+    pixels = composite.flatten().reshape(-1, 1)
 
     try:
         # Fit a 2-component GaussianMixture Model (GMM)
@@ -73,9 +77,9 @@ def determine_gmm_tissue_threshold(composite, config):
             'method': 'gmm',
             'threshold': threshold,
             'min_threshold': min_tissue_threshold,
-            'gmm_means': means,
-            'gmm_stds': stds,
-            'gmm_weights': weights
+            'gmm_means': means.tolist(),
+            'gmm_stds': stds.tolist(),
+            'gmm_weights': weights.tolist()
         }
     
     except(ConvergenceWarning, ValueError) as e:
@@ -125,7 +129,7 @@ def generate_tissue_mask(composite, threshold, remove_objects,
     hole_threshold = mask_cfg.get('small_hole_threshold')
 
     # Generate the (H, W) mask and record the original area
-    mask = (composite > threshold).any(dim = 'marker').values
+    mask = (composite > threshold).any(axis = 0).values
     orig_area_px = np.sum(mask)
 
     original_mask = mask.copy()
@@ -135,12 +139,16 @@ def generate_tissue_mask(composite, threshold, remove_objects,
         mask = remove_small_objects(mask, object_threshold)
         removed_objects = original_mask & ~mask
         total_removed_area = np.sum(removed_objects)
+    else:
+        total_removed_area = 0
 
     # Fill small holes if toggled, measuring them
     if fill_holes:
         mask = remove_small_holes(mask, hole_threshold)
         filled_holes = mask & ~original_mask
         total_filled_area = np.sum(filled_holes)
+    else:
+        total_filled_area = 0
 
     # Record mask metadata
     final_area_px = np.sum(mask)
@@ -152,7 +160,7 @@ def generate_tissue_mask(composite, threshold, remove_objects,
         'full_img_area_px': int(img_area_px),
         "removed_objects_area_px": int(total_removed_area),
         "filled_holes_area_px": int(total_filled_area),
-        "mask_coverage_percent": int(final_area_px / img_area_px),
+        "mask_coverage_percent": 100 * final_area_px / img_area_px,
         "cleaning_area_change_px": int(final_area_px - orig_area_px),
         "cleaning_area_change_percent": ((final_area_px - orig_area_px) 
                                 / orig_area_px * 100 
@@ -162,15 +170,20 @@ def generate_tissue_mask(composite, threshold, remove_objects,
     return mask, metadata
 
 
-def generate_mask_qc_plot(mask, composite, image_name, 
+def generate_mask_qc_plot(mask, composite, image_name, mask_panel,
                           threshold_metadata, mask_metadata, config):
     # Generates and returns a quality control (QC) plot overlaying the tissue
     # mask upon the composite image
 
     # Filter the composite for the RGB markers specified in the configurations
     rgb_markers = config.get('tissue_mask', {}).get('rgb_markers')
-    composite = composite.sel(marker = rgb_markers)
-    composite.transpose('y', 'x', 'marker')
+    rgb_panel = mask_panel[mask_panel['canonical_marker'].isin(rgb_markers)]
+    rgb_metal_tags = rgb_panel['canonical_metal_tag'].tolist()
+
+    composite = composite.sel(
+        channel = np.isin(composite['metal_tag'], rgb_metal_tags)
+    ).values
+    composite = np.transpose(composite, (1, 2, 0))
 
     # Plot and return the figure
     fig, ax = plt.subplots(figsize = (8, 8))

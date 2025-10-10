@@ -2,23 +2,33 @@ from pathlib import Path
 import yaml
 import pandas as pd
 from readimc import MCDFile
+import tifffile as tf
 import xarray as xr
 import os
+import re
+import numpy as np
 
-def load_input_paths(input_path):
+
+def load_input_paths(config):
     # Loads and returns a list of .mcd file paths
 
     # Verify the input folder exists
+    input_path = config.get('paths', {}).get('input_folder', None)
     input_folder = Path(input_path)
     if not input_folder.exists():
         raise FileNotFoundError(f"Input folder {input_folder} does not exist.")
     
-    # Verify .mcd files exist in the folder
+    # Verify files exist in the folder and their type
     mcd_files = list(input_folder.glob("*.mcd"))
-    if not mcd_files:
-        raise RuntimeError(f"No .mcd files found in {input_folder}")
-    
-    return mcd_files
+    tiff_files = list(input_folder.glob("*.tiff"))
+
+    if tiff_files:
+        return (mcd_files, "TIFF")
+    elif mcd_files:
+        return (mcd_files, "MCD")
+    else:
+        raise RuntimeError(f"No MCD or TIFF files found in {input_folder}")
+
 
 def load_config(config_path):
     # Loads and returns a YAML configuration file
@@ -41,12 +51,14 @@ def load_config(config_path):
     
     return config
 
-def load_panel(panel_path, mcd_file, config):
+
+def load_panel(mcd_file, file_type, config):
     # Loads and returns an IMC stain panel as a dataframe, filtered for markers 
     # present in the provided data and background stains if specified; assumes 
-    # markers are uniformly present in all input images 
+    # markers are uniformly present in all input imgs 
 
     # Verify the panel exists
+    panel_path = config.get('paths', {}).get('panel_file', None)
     panel_file = Path(panel_path)
     if not panel_file.exists():
         raise FileNotFoundError(f"Panel {panel_file} does not exist")
@@ -74,38 +86,118 @@ def load_panel(panel_path, mcd_file, config):
     # Standardize value types to strings
     panel['metal_tag'] = panel['metal_tag'].astype(str)
 
+    # Create a new column for canonical marker names
+    panel['canonical_marker'] = canonicalize_markers(panel['marker'].tolist())
+
+    # Sanitize the metal tags
+    panel['canonical_metal_tag'] = (canonicalize_metal_tags(panel['metal_tag']
+                                                            .tolist()))
+    
+    # Remove any metal tags not present in the provided input data
+    img = load_image(mcd_file, file_type, panel)
+    present_tags = img.coords['metal_tag'].values.tolist()
+    panel = panel[panel['canonical_metal_tag'].isin(present_tags)]
+    
     # Filter out background stains (markers) if provided
-    background_stains = config.get('background_stains, []')
+    background_stains = config.get('background_stains', [])
     if not background_stains:
         panel = panel[~panel['marker'].isin(background_stains)]
 
-    # Remove any metal tags not present in the provided input data
-    image = load_image(mcd_file)
-    present_tags = list(image.metal_tag.values)
-    panel = panel[panel['metal_tag'].isin(present_tags)]
+    # Collapse any duplicate metal tags to the first channel
+    panel = panel.drop_duplicates(subset = 'metal_tag', keep = 'first')
 
     return panel
-           
-def load_image(image_path):
-    # Loads and returns an .mcd image as an xarray object
 
-    # Verify the .mcd image can be parsed
+
+def canonicalize_markers(markers):
+    # Maps the given list of markers to its canonical name
+
+    # Load the canonical markers mapping file
+    mapping_path = Path('utils/canonical_markers.yaml')
+    if not mapping_path.exists():
+        raise FileNotFoundError(
+            f"YAML Canonical Marker mapping file {mapping_path} does not exist"
+        )
     try:
-        with MCDFile(image_path) as f:
-            acquisition = f.slides[0].acquisitions[0]
-            image = f.read_acquisition(acquisition)
-            metal_tags = acquisition.channel_names
-    except Exception as e:
-        print(f"Error processing file: {image_path} - {e}")
+        with open(mapping_path, 'r') as f:
+            mapping = yaml.safe_load(f)
+    except mapping_path.YAMLError as e:
+        raise RuntimeError(
+            f"Failed to parse YAML canonical marker mapping file " +
+            f"{mapping_path}: {e}"
+        )
+    
+    # Build the reverse lookup: map display + synonyms + key → key
+    value_to_key = {}
+    for key, info in mapping.items():
+        # Map the key itself
+        value_to_key[key] = key
+        # Map the display name
+        display_name = info.get("display")
+        if display_name is not None:
+            value_to_key[display_name] = key
+        # Map synonyms
+        for syn in info.get("synonyms", []):
+            value_to_key[syn] = key
 
-    # Return the image and metal tag labels as an xarray
-    image = xr.DataArray(
-        image, 
+    # Map the list of markers to their canonical names
+    canonical_markers = [value_to_key.get(m, m) for m in markers]
+    return canonical_markers
+
+
+def canonicalize_metal_tags(metal_tags):
+    # Sanitizes and returns the given metal tag 
+
+    canonicalized = []
+    for tag in metal_tags:
+        if not isinstance(tag, str):
+            tag = str(tag)
+        tag = tag.replace(' ', '')
+        letters = ''.join(re.findall(r'[A-Za-z]', tag))
+        numbers = ''.join(re.findall(r'\d', tag))
+        canonicalized.append(f"{letters}{numbers}")
+    return canonicalized
+
+           
+def load_image(img_path, file_type, panel):
+    # Loads and returns an image of the given file type as an xarray object
+
+    if file_type == "MCD":
+
+        # Verify the image can be parsed
+        try:
+            with MCDFile(img_path) as f:
+                acquisition = f.slides[0].acquisitions[0]
+                img = f.read_acquisition(acquisition)
+                metal_tags = acquisition.channel_names
+        except Exception as e:
+            print(f"Error processing file: {img_path} - {e}")
+
+    else:
+
+        # Assuming the panel is one-to-one and index matched with the image
+        img = tf.imread(img_path)
+        metal_tags = panel['metal_tag'].tolist()
+
+    # Return the img, markers, and metal tag labels as an xarray
+    metal_tags = canonicalize_metal_tags(metal_tags)
+    img = xr.DataArray(
+        img, 
         dims = ("channel", "y", "x"),
-        coords = {'metal_tag': metal_tags}
+        coords = {'metal_tag': ('channel', metal_tags)}
+    )  
+
+    return img
+
+def to_xarray(data, template):
+    # Returns an xarray using the provided data with the template's metadata
+    return xr.DataArray(
+        data, 
+        dims = template.dims, 
+        coords = template.coords, 
+        attrs = template.attrs
     )
 
-    return image
 
 def load_mask_generation_panel(config, panel):
     # Loads and returns dataframe of metal tag - marker mappings to be used to 
@@ -114,26 +206,41 @@ def load_mask_generation_panel(config, panel):
 
     # Fetch the tissue mask generation markers if provided
     mask_panel = panel.copy()
-    mask_markers = config.get('mask_generation_markers', [])
+    mask_markers = (config.get('tissue_mask', {})
+                          .get('mask_generation_markers', []))
 
     # Subset for the provided mask markers, else use all markers present
     if mask_markers:
-        mask_panel = mask_panel[mask_panel['marker'].isin(mask_markers)]
+        mask_panel = mask_panel[
+            mask_panel['canonical_marker'].isin(mask_markers)
+        ]
     
     return mask_panel
 
-def save_tissue_mask(tissue_mask, image_name, config):
-    # Saves the provided tissue mask using the name of the image with a 
-    # '_mask.tiff' suffix to the output folder specified in the configurations
-    return
 
-def save_mask_metadata(metadata, image_name, config):
-    # Saves the provided metadata as a CSV using the name of the image with 
+def save_tissue_mask(tissue_mask, img_name, config):
+    # Saves the provided tissue mask using the name of the img with a 
+    # '_mask.tiff' suffix to the output folder specified in the configurations
+
+    # If the output folder was not initialized, create it using its path
+    output_folder = config.get('paths', {}).get('output_folder', None)
+
+    if not output_folder:
+        output_folder.mkdir(parents = True, exist_ok = True)
+        print(f"The provided output folder was not initialized, " + 
+              f"creating directory {output_folder}")
+        
+    out_path = os.path.join(output_folder, img_name + "_mask.tiff")
+    tf.imwrite(out_path, tissue_mask.astype(np.uint8))
+
+
+def save_mask_metadata(metadata, img_name, config):
+    # Saves the provided metadata as a CSV using the name of the img with 
     # a '_mask_metadata.csv' suffix to the output folder specified in the 
     # configurations
 
     # If a metadata folder was not provided, create one
-    metadata_folder = config.get('paths', {}).get('metadata_folder', None)
+    metadata_folder = config.get('paths', {}).get('mask_metadata_folder', None)
 
     if not metadata_folder:
         metadata_folder = os.path.join(
@@ -144,26 +251,27 @@ def save_mask_metadata(metadata, image_name, config):
               f"default {metadata_folder}.")
         
     # Save the metadata as a CSV in the folder
-    out_path = os.path.join(metadata_folder, image_name + "_metadata.csv")
+    out_path = os.path.join(metadata_folder, img_name + "_metadata.csv")
+    metadata = pd.DataFrame([metadata])
     metadata.to_csv(out_path, index = False)
         
 
-def save_mask_qc(qc_plot, image_name, config):
+def save_mask_qc(qc_plot, img_name, config):
     # Saves the provided quality control plot as a PNG using the name of the
-    # image with a '_qc.png' suffix to the output folder specified in the
+    # img with a '_qc.png' suffix to the output folder specified in the
     # configurations
 
     # If a quality control folder was not provided, create one
-    qc_folder = config.get('paths', {}).get('qc_folder', None)
+    qc_folder = config.get('paths', {}).get('mask_qc_folder', None)
 
     if not qc_folder:
         qc_folder = os.path.join(
             os.path.join(config['paths']['output_folder']), 'qc'
         ).mkdir(parents = True, exist_ok = True)
 
-        print("No quality control (qc) folder specified in teh configuration." +
+        print("No quality control (qc) folder specified in the configuration." +
               f" Using default {qc_folder}.")
         
     # Save the QC plot as a PNG in the folder
-    out_path = os.path.join(qc_folder, image_name + "_qc.png")
-    image_name ...
+    out_path = os.path.join(qc_folder, img_name + "_qc.png")
+    qc_plot.savefig(out_path, dpi = 300, bbox_inches = 'tight')

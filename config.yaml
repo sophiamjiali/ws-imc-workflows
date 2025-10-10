@@ -2,14 +2,13 @@ seed: 42
 
 paths:
   # Required
-  input_folder:
-  output_folder: 
-  panel_file: 
+  input_folder: datasets/input
+  output_folder: datasets/output
+  panel_file: datasets/ws_panel.csv
 
   # Non-required: defaults exist
-  metadata_folder: 
-  mask_metadata_folder:
-  mask_qc_folder: 
+  mask_metadata_folder: datasets/mask_metadata
+  mask_qc_folder: datasets/mask_qc
 
 preprocessing:
 
@@ -18,39 +17,59 @@ preprocessing:
     apply_background_stain_removal: true
     apply_hot_pixel_removal: true
     apply_striping_removal: true
-    apply_denoising: true
-    apply_background_subtraction: true
+    apply_denoising: false
+    apply_background_subtraction: false
     apply_winsorization: true
     apply_min_max_scaling: true
 
+  rgb_markers:
+    - pan_cytokeratin
+    - cd45
+    - col1a2
+
   # Non-required: defaults exist
-  background_stains: [...]
+  background_stains: 
+    - pnad
 
   hot_pixel:
-    window_size:
-    z_score_threshold:
+    window_size: 3
+    z_score_threshold: 6
 
   striping:
-    direction: 
-    size: 
+    direction: column
+    size: 5
 
   denoising:
-    cofactor:
+    cofactor: 10
 
   background_subtraction:
-    percentile: 
+    percentile: 2.0
+
   winsorization:
-    limits:
+    limits: [0.005, 0.005]
 
 
 tissue_mask:
 
   # Required
-  mask_generation_markers: [...]
+  mask_generation_markers: 
+    - pan_cytokeratin
+    - vimentin
+    - col1a2
+    - fibronectin
+    - tenacin
+    - cd45
+    - acta2
+    - fap
+    - cd31
 
   # Non-required: defaults exist
+  min_tissue_threshold: 0
   small_object_threshold: 50
   small_hole_threshold: 50
 
-  rgb_markers: [...]
+  rgb_markers:
+    - pan_cytokeratin
+    - cd45
+    - col1a2
   

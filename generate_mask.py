@@ -4,7 +4,8 @@ import argparse
 
 from utils.io_utils import (
     load_input_paths, 
-    load_config, load_panel, 
+    load_config, 
+    load_panel, 
     load_image, 
     load_mask_generation_panel,
     save_tissue_mask,
@@ -20,24 +21,15 @@ from utils.mask_utils import (
 from utils.preprocessing import preprocess_image
 
 
-from skimage import morphology, measure, exposure
-from skimage.measure import find_contours
-
-
 def parse_arguments():
     # Parses and returns command-line arguments
 
     parser = argparse.ArgumentParser(
         description = "Generate tissue masks from WS-IMC images."
     )
-    # parser.add_argument("--input", type = str, required = True, 
-    #                     help = "Path to input folder")
-    # parser.add_argument("--output", type = str, required = True,
-    #                     help = "Path to output folder")
+
     parser.add_argument("--config", type = str, default = 'config.yaml',
                         help = "Path to configuration file")
-    # parser.add_argument("--panel", type = str, required = True,
-    #                     help = "Path to panel")
     parser.add_argument("--threshold-method", type = str, 
                         choices = ['otsu', 'gmm'], default = 'otsu',
                         help = "Thresholding method to determine a tissue threshold for the tissue mask: 'otsu', or 'gmm'")
@@ -45,9 +37,9 @@ def parse_arguments():
                         help = "Remove small objects from the tissue mask")
     parser.add_argument("--fill-small-holes", type = bool, default = True,
                         help = "Fill small holes in the tissue mask")
-    parser.add_argument("--save_metadata", type = bool, default = True,
+    parser.add_argument("--saveimetadata", type = bool, default = True,
                         help = "Save metadata associated with mask generation")
-    parser.add_argument("--save_qc", type = bool, default = True, 
+    parser.add_argument("--save-qc", type = bool, default = True, 
                         help = "Save quality control plots visualizing tissue mask coverage")
     parser.add_argument('--preprocess_images', type = bool, default = True,
                         help = "Preprocess the images in the input folder")
@@ -56,33 +48,29 @@ def parse_arguments():
 
 def main():
 
-    # Parse command-line arguments
+    # Initialize the environment and parse user configurations
     args = parse_arguments()
-    
-    # Load configurations
     config = load_config(args.config)
-
-    # Load input paths
-    mcd_files = load_input_paths(args.input)
-
-    # Load the panel
-    panel = load_panel(args.panel, mcd_files[0], config)
+    img_files, file_type = load_input_paths(args.input)
+    panel = load_panel(img_files[0], file_type, config)
 
     # Fetch mask generation markers if provided
     mask_panel = load_mask_generation_panel(config, panel)
-    mask_metals = mask_panel['metal_tag'].tolist()
+    mask_metals = mask_panel['canonical_metal_tag'].tolist()
 
     # Generate a tissue mask for each input image
-    for path in mcd_files:
+    for path in img_files:
         image_name = path.name
 
-        # Load the image and preprocess if toggled
-        image = load_image(path)
-        if args.preprocess_image:
-            composite = preprocess_image(image, config)
+        # Load the image
+        image = load_image(path, file_type, panel)
 
-        # Filter for markers used for mask generation after preprocessing
-        composite = image.sel(metal_tag = mask_metals)
+        # Filter for markers used for mask generation
+        composite = image.sel(channel = image['metal_tag'].isin(mask_metals))
+
+        # Preprocess the image if toggled
+        if args.preprocess_images:
+            composite = preprocess_image(composite, config)
 
         # Dynamically generate a tissue threshold for the image: GMM or Otsu's
         if args.threshold_method == 'otsu':

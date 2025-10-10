@@ -1,6 +1,6 @@
 """
 Script:         preprocessing.py
-Purpose:        Functions for preprocessing images
+Purpose:        Functions for preprocessing imgs
 Author:         Sophia Li
 Affiliation:    Campbell Lab, Lunenfeld-Tanenbaum Research Institute (LTRI),
                 University of Toronto
@@ -15,82 +15,90 @@ from scipy.ndimage import (
     generate_binary_structure,
     binary_erosion
 )
+from utils.io_utils import to_xarray
 
 
-def preprocess_image(image, config):
-    # Returns the preprocessed xarray image per the configurations provided
+def preprocess_image(img, config):
+    # Returns the preprocessed xarray img per the configurations provided
 
     # Fetch thresholds from the configurations
-    toggles_cfg = preproc_cfg.get('toggles', {})
     preproc_cfg = config.get('preprocessing', {})
+    toggles_cfg = preproc_cfg.get('toggles', {})
     
     # 1. Background stain removal
     if toggles_cfg.get('apply_background_stain_removal', True):
         background_stains = preproc_cfg.get('background_stains', [])
-        image = remove_background_stains(image, background_stains)
+        img = remove_background_stains(img, background_stains)
 
     # 2. Hot pixel removal
     if toggles_cfg.get('apply_hot_pixel_removal', True):
         hot_pixel_cfg = preproc_cfg.get('hot_pixel', {})
-        image = remove_hot_pixels(image,
+        processed_img = remove_hot_pixels(img,
             window_size = hot_pixel_cfg.get('window_size', 0),
             z_score_threshold = hot_pixel_cfg.get('z_score_threshold', 0)
         )
+        img = to_xarray(processed_img, img)
 
     # 3. Striping artifact removal
     if toggles_cfg.get('apply_striping_removal', True):
         striping_cfg = preproc_cfg.get('striping', {})
-        image = remove_striping_artifacts(image,
+        processed_img = remove_striping_artifacts(img,
             direction = striping_cfg.get('direction', 'vertical'),
             size = striping_cfg.get('size', 0)
         )
 
+        img = to_xarray(processed_img, img)
+
     # 4. Shot-noise denoising
     if toggles_cfg.get('apply_denoising', True):
         denoise_cfg = preproc_cfg.get('denoising', {})
-        image = denoise(image,
+        processed_img = denoise(img,
             cofactor = denoise_cfg.get('cofactor', 0)
         )
+        img = to_xarray(processed_img, img)
 
     # 5. Background subtraction
     if toggles_cfg.get('apply_background_subtraction', True):
         background_cfg = preproc_cfg.get('background_subtraction', {})
-        image = subtract_background(image,
+        processed_img = subtract_background(img,
             percentile = background_cfg.get('percentile', 0)
         )
+        img = to_xarray(processed_img, img)
 
     # 6. Winsorization
     if toggles_cfg.get('apply_winsorization', True):
         winsorize_cfg = preproc_cfg.get('winsorization', {})
-        image = winsorize(image, 
+        processed_img = winsorize(img, 
             limits = winsorize_cfg.get('limits', [0, 0])
         )
+        img = to_xarray(processed_img, img)
 
     # 7. Global Normalization
     if toggles_cfg.get('apply_min_max_scaling', True):
-        image = scale(image)
+        processed_img = scale(img)
+        img = to_xarray(processed_img, img)
 
-    return image
+    return img
 
-def remove_background_stains(image, background_stains):
-    # Removes the background stains, provided as metal tags, from the image
-    return image.drop_sel(metal_tag = background_stains)
+def remove_background_stains(img, background_stains):
+    # Removes the background stains, provided as metal tags, from the img
+    return img.sel(channel = ~np.isin(img['metal_tag'], background_stains))
 
-def remove_hot_pixels(image, window_size, z_score_threshold):
+def remove_hot_pixels(img, window_size, z_score_threshold):
     # Removes hot pixels per channel using a median filter to estimate 
     # background, and removing only single hot pixel points; only non-isolated 
     # hot pixels are kept as candidates to avoid removing small clusters, which 
     # could be real biological features in 5 micron resolution
     
     # Define a hot pixel mask per channel
-    clean_image = np.empty_like(image)
+    clean_img = np.empty_like(img)
 
     # Define an 8-connected neighbourhood structure for each channel
     structure = generate_binary_structure(2, 1)
 
     # Detect and remove hot pixels independently per channel
-    for c_idx in range(image.shape[0]):
-        channel = image.isel(channel = c_idx)
+    for c_idx in range(img.shape[0]):
+        channel = img.isel(channel = c_idx)
 
         # Compute the local median and local median absolute deviation (MAD)
         local_median = median_filter(channel, window_size)
@@ -117,17 +125,19 @@ def remove_hot_pixels(image, window_size, z_score_threshold):
 
         # Replace the isolated hot pixels with the local median value
         clean_channel = channel.copy()
-        clean_channel[isolated_mask] = local_median[isolated_mask]
+        clean_channel = (clean_channel.where(
+            ~isolated_mask, other = local_median
+        ))
 
-        clean_image[c_idx] = clean_channel
+        clean_img[c_idx] = clean_channel
 
-    return clean_image
+    return clean_img
 
-def remove_striping_artifacts(image, direction, size):
+def remove_striping_artifacts(img, direction, size):
     # Applies a directional median filter per channel along the given direction 
     # to reduce striping artifacts
 
-    filtered_img = np.empty_like(image)
+    filtered_img = np.empty_like(img)
 
     if direction == "row":
         size_tuple = (1, int(size))
@@ -137,64 +147,64 @@ def remove_striping_artifacts(image, direction, size):
         raise ValueError("Direction must be 'row' or 'column'.")
 
     # Apply the median filter per channel
-    for c in range(image.shape[0]):
-        channel = np.ascontiguousarray(image[c], dtype=np.float32)
+    for c in range(img.shape[0]):
+        channel = np.ascontiguousarray(img[c], dtype=np.float32)
         filtered_img[c] = median_filter(
             channel, size = size_tuple, mode = "reflect"
         )
 
     return filtered_img
 
-def denoise(image, cofactor):
-    # Performs a variance-stabilizing transform (VST) on the IMC image using
+def denoise(img, cofactor):
+    # Performs a variance-stabilizing transform (VST) on the IMC img using
     # arcsinh mapping per channel, per pixel
 
-    # Convert the image to float32 for safe computation
-    vst_img = image.astype(np.float32, copy = True)
+    # Convert the img to float32 for safe computation
+    vst_img = img.astype(np.float32, copy = True)
 
     # Apply the arcsinh transform to each channel independently
-    for c in range(image.shape[0]):
-        vst_img[c] = np.arcsinh(image[c] / cofactor)
+    for c in range(img.shape[0]):
+        vst_img[c] = np.arcsinh(img[c] / cofactor)
 
     return vst_img
 
-def subtract_background(image, percentile):
+def subtract_background(img, percentile):
     # Subtract a robust per-channel background offset using the specified
     # percentile as a conservative background estimate; intensities are clipped
     # at zero to avoid negatives
 
-    bg_subtract_img = image.copy()
+    bg_subtract_img = img.copy()
 
-    for c in range(image.shape[0]):
-        bg_level = np.percentile(image[c], percentile)
+    for c in range(img.shape[0]):
+        bg_level = np.percentile(img[c], percentile)
         bg_subtract_img[c] = np.clip(
-            image[c] - bg_level, a_min = 0, a_max = None
+            img[c] - bg_level, a_min = 0, a_max = None
         )
 
-    return bg_subtract_img
+    return bg_subtract_img.values
 
-def winsorize(image, limits):
-    # Clips the top and bottom quantile values of the image
+def winsorize(img, limits):
+    # Clips the top and bottom quantile values of the img
     
-    wins_img = np.empty_like(image, dtype = np.float32)
-    for c in range(image.shape[0]):
+    wins_img = np.empty_like(img.values, dtype = np.float32)
+    for c in range(img.shape[0]):
 
         ## Flatten the channel, winsorize, then reshape
-        flat = image[c].flatten()
+        flat = img[c].values.flatten()
         win_flat = scipy_winsorize(flat, limits = limits)
-        wins_img[c] = win_flat.reshape(image.shape[1:])
+        wins_img[c] = win_flat.reshape(img.shape[1:])
 
     return wins_img
 
-def scale(image):
+def scale(img):
     # Scales the pixel intensities to [0, 1] per channel via min-max scaling
     
-    scaled = image.astype(np.float32, copy = True)
+    scaled = np.empty_like(img.values, dtype = np.float32)
     scaler = MinMaxScaler(feature_range = (0, 1))
     
-    for c in range(image.shape[0]):
-        flat = image[c].reshape(-1, 1)
+    for c in range(img.shape[0]):
+        flat = img[c].values.reshape(-1, 1)
         scaled_flat = scaler.fit_transform(flat)
-        scaled[c] = scaled_flat.reshape(image.shape[1:])
+        scaled[c] = scaled_flat.reshape(img.shape[1:])
 
     return scaled

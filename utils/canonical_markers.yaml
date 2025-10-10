@@ -1,0 +1,685 @@
+vimentin:
+  display: Vimentin
+  synonyms:
+    - Vimentin
+    - VIM
+
+cdh1:
+  display: CDH1
+  synonyms:
+    - CDH1
+    - E-cadherin
+    - E Cadherin
+    - Cadherin-1
+    - Cadherin 1
+    - ECAD
+    - CD324
+    - Uvomorulin
+
+pan_cytokeratin:
+  display: pan Cytokeratin
+  synonyms:
+    - pan cytokeratin
+    - pan Cytokeratin
+    - Pan Cytokeratin
+    - pan-cytokeratin
+    - pan-Cytokeratin
+    - Pan-Cytokeratin
+    - panCK
+    - PanCK
+    - Pan-CK
+    - Keratin Epithelial
+
+fibronectin:
+  display: Fibronectin
+  synonyms:
+    - Fibronectin
+    - FN
+    - FN1
+    - FINC
+    - LETS
+    - MSF
+
+pmlc2:
+  display: pMLC2
+  synonyms:
+    - pMLC2
+    - p-MLC2
+    - phospho-MLC2
+    - phospho MLC2
+
+ins:
+  display: INS
+  synonyms:
+    - INS
+    - Insulin
+
+col1a2:
+  display: COL1A2
+  synonyms:
+    - Col1A2
+    - Collagen I
+    - Collagen 1
+    - Collagen Type I
+
+krt5:
+  display: KRT5
+  synonyms:
+      - KRT5
+      - Cytokeratin 5
+      - CK5
+
+cd15:
+  display: CD15
+  synonyms:
+    - CD15
+    - LeX
+    - Lewis X
+
+tenascin:
+  display: Tenascin
+  synonyms:
+    - Tenascin
+    - Tenacin
+    - Tenascin C
+    - TNC
+
+prss1:
+  display: PRSS1
+  synonyms:
+    - PRSS1
+    - Trypsin-1
+    - Trypsinogen 1
+
+secondary_for_prss1:
+  display: Secondary for PRSS1
+  synonyms:
+    - Secondary for PRSS1
+    - PRSS1 secondary
+
+periostin:
+  display: Periostin
+  synonyms:
+    - Periostin
+    - POSTN
+
+agr2:
+  display: AGR2
+  synonyms:
+    - AGR2
+    - Anterior Gradient 2
+
+tff1:
+  display: TFF1
+  synonyms:
+    - TFF1
+    - Trefoil Factor 1
+
+gata6:
+  display: GATA6
+  synonyms:
+    - GATA6
+
+cd8a:
+  display: CD8a
+  synonyms:
+    - CD8a
+    - CD8 alpha
+    - CD8α
+
+clu:
+  display: CLU
+  synonyms:
+    - CLU
+    - Clusterin
+
+s100a9:
+  display: S100A9
+  synonyms:
+    - S100A9
+    - Calgranulin B
+    - MRP-14
+    - S100-A9
+    - MAC387
+    - P14
+
+cd68:
+  display: CD68
+  synonyms:
+    - CD68
+
+foxp3:
+  display: FOXP3
+  synonyms:
+    - FOXP3
+    - Scurfin
+    - IPEX
+    - Forkhead Box P3
+    - DIETER
+    - XPID
+    - AIID
+    - PIDX
+    - JM2
+
+nr2f2:
+  display: NR2F2
+  synonyms:
+    - NR2F2
+    - COUP-TFII
+    - COUPTFII
+
+myh11:
+  display: MYH11
+  synonyms:
+    - MYH11
+    - Myosin Heavy Chain 11
+
+cd36:
+  display: CD36
+  synonyms:
+    - CD36
+    - Platelet Glycoprotein 4
+
+fap:
+  display: FAP
+  synonyms:
+    - FAP
+    - Fibroblast Activation Protein
+
+s100a2:
+  display: S100A2
+  synonyms:
+    - S100A2
+
+muc16:
+  display: MUC16
+  synonyms:
+    - MUC16
+    - CA125
+
+pdx1:
+  display: PDX1
+  synonyms:
+    - PDX1
+    - Pancreatic and duodenal homeobox 1
+
+psmad2:
+  display: pSMAD2
+  synonyms:
+    - pSMAD2
+    - p-SMAD2
+    - phospho-SMAD2
+    - phospho SMAD2
+
+mmp7:
+  display: MMP7
+  synonyms:
+    - MMP7
+    - Matrilysin
+
+ccl21:
+  display: CCL21
+  synonyms:
+    - CCL21
+
+pdgfrb:
+  display: PDGFRB
+  synonyms:
+    - PDGFRb
+    - PDGFR-β
+    - PDGFR-beta
+
+arg1:
+  display: ARG1
+  synonyms:
+    - Arg1
+    - Arginase 1
+    - Arginase-1
+
+cd4:
+  display: CD4
+  synonyms:
+    - CD4
+
+cd31:
+  display: CD31
+  synonyms:
+    - CD31
+    - PECAM1
+    - PECAM-1
+
+cd105_eng:
+  display: CD105/ENG
+  synonyms:
+    - CD105/ENG
+    - CD105
+    - ENG
+    - Endoglin
+
+pdgfrab:
+  display: PDGFRAB
+  synonyms:
+    - PDGFRab
+    - PDGFRαβ
+    - PDGFR-alpha/beta
+    - PDGFRa/b
+
+foxa2:
+  display: FOXA2
+  synonyms:
+    - FOXA2
+    - HNF3B
+
+cd45:
+  display: CD45
+  synonyms:
+    - CD45
+    - PTPRC
+
+podoplanin:
+  display: Podoplanin
+  synonyms:
+    - Podoplanin
+    - PDPN
+
+s100a4:
+  display: S100A4
+  synonyms:
+    - S100A4
+    - Fibroblast-specific protein 1
+    - FSP1
+
+acta2:
+  display: ACTA2
+  synonyms:
+    - ACTA2
+    - α-SMA
+    - alpha-SMA
+    - Smooth Muscle Actin
+    - SMA
+
+mpo:
+  display: MPO
+  synonyms:
+    - MPO
+    - Myeloperoxidase
+
+tp63:
+  display: TP63
+  synonyms:
+    - TP63
+    - p63
+
+ceacam6:
+  display: CEACAM6
+  synonyms:
+    - CEACAM6
+    - CD66c
+
+krt14:
+  display: KRT14
+  synonyms:
+    - KRT14
+    - Cytokeratin 14
+    - CK14
+
+krt19:
+  display: KRT19
+  synonyms:
+    - KRT19
+    - Cytokeratin 19
+    - CK19
+
+krt20:
+  display: KRT20
+  synonyms:
+    - KRT20
+    - Cytokeratin 20
+    - CK20
+
+krt81:
+  display: KRT81
+  synonyms:
+    - KRT81
+    - Cytokeratin 81
+    - CK81
+
+cldn3:
+  display: CLDN3
+  synonyms:
+    - CLDN3
+    - Claudin 3
+
+spp1:
+  display: SPP1
+  synonyms:
+    - SPP1
+    - Osteopontin
+
+vcam1:
+  display: VCAM1
+  synonyms:
+    - VCAM1
+    - Vascular Cell Adhesion Molecule 1
+
+tnfrsf11b:
+  display: TNFRSF11B
+  synonyms:
+    - TNFRS11B
+    - OPG
+    - Osteoprotegerin
+
+s100p:
+  display: S100P
+  synonyms:
+    - S100P
+
+bmp4:
+  display: BMP4
+  synonyms:
+    - BMP4
+    - Bone Morphogenetic Protein 4
+
+ca9:
+  display: CA9
+  synonyms:
+    - CA9
+    - Carbonic Anhydrase IX
+
+tspan8:
+  display: TSPAN8
+  synonyms:
+    - TSPAN8
+    - Tetraspanin 8
+
+cav1:
+  display: CAV1
+  synonyms:
+    - CAV1
+    - Caveolin 1
+
+reg4:
+  display: REG4
+  synonyms:
+    - REG4
+    - Regenerating islet-derived protein 4
+
+anxa2:
+  display: ANXA2
+  synonyms:
+    - ANXA2
+    - Annexin A2
+
+coliv:
+  display: ColIV
+  synonyms:
+    - ColIV
+    - Collagen IV
+    - Collagen 4
+    - Collagen Type IV
+
+cd34:
+  display: CD34
+  synonyms:
+    - CD34
+
+ctgf:
+  display: CTGF
+  synonyms:
+    - CTGF
+    - Connective Tissue Growth Factor
+
+serpine1_pai1:
+  display: SERPINE1/PAI-1
+  synonyms:
+    - SERPINE1/PAI-1
+    - SERPINE1
+    - PAI-1
+
+fgg:
+  display: FGG
+  synonyms:
+    - FGG
+    - Fibrinogen gamma chain
+
+cleaved_col1:
+  display: Cleaved Col1
+  synonyms:
+    - Cleaved Col1
+    - Cleaved Collagen I
+    - Cleaved Collagen 1
+
+p_fak:
+  display: p-FAK
+  synonyms:
+    - p-FAK
+    - phospho-FAK
+    - phospho FAK
+
+cd74:
+  display: CD74
+  synonyms:
+    - CD74
+
+tenacin:
+  display: Tenacin
+  synonyms:
+    - Tenacin
+    - Tenascin
+    - Tenascin C
+    - TNC
+
+yap:
+  display: YAP
+  synonyms:
+    - YAP
+    - Yes-associated protein
+
+hif1a:
+  display: HIF1A
+  synonyms:
+    - HIF1A
+    - Hypoxia-inducible factor 1-alpha
+
+cxcl12:
+  display: CXCL12
+  synonyms:
+    - CXCL12
+    - SDF-1
+    - SDF1
+
+esm1:
+  display: ESM1
+  synonyms:
+    - ESM1
+    - Endocan
+
+pgp95:
+  display: PGP9.5
+  synonyms:
+    - PGP9.5
+    - UCHL1
+
+cxcl13:
+  display: CXCL13
+  synonyms:
+    - CXCL13
+    - BCA-1
+
+hla_abc:
+  display: HLA-ABC
+  synonyms:
+    - HLA-ABC
+
+fn_eda_humanized:
+  display: FN-EDA (humanized)
+  synonyms:
+    - FN-EDA (humanized)
+    - FN-EDA
+    - Fibronectin EDA
+
+fn_edb_humanized:
+  display: FN-EDB (humanized)
+  synonyms:
+    - FN-EDB (humanized)
+    - FN-EDB
+    - Fibronectin EDB
+
+hla_dr:
+  display: HLA-DR
+  synonyms:
+    - HLA-DR
+    - HLA DR
+
+cd303_clec4c:
+  display: CD303/CLEC4C
+  synonyms:
+    - CD303/CLEC4C
+    - BDCA-2
+
+cd79a:
+  display: CD79A
+  synonyms:
+    - CD79A
+
+cd66b:
+  display: CD66b
+  synonyms:
+    - CD66b
+    - CEACAM8
+
+cd278_icos:
+  display: CD278 (iCOS)
+  synonyms:
+    - CD278 (iCOS)
+    - ICOS
+    - CD278
+
+cd24:
+  display: CD24
+  synonyms:
+    - CD24
+
+cd11c:
+  display: CD11c
+  synonyms:
+    - CD11c
+    - ITGAX
+
+clec9a:
+  display: CLEC9A
+  synonyms:
+    - CLEC9A
+
+tigit:
+  display: TIGIT
+  synonyms:
+    - TIGIT
+
+igm:
+  display: IgM
+  synonyms:
+    - IgM
+    - Immunoglobulin M
+
+cd103:
+  display: CD103
+  synonyms:
+    - CD103
+    - ITGAE
+
+granzymeb:
+  display: GranzymeB
+  synonyms:
+    - GranzymeB
+    - GZMB
+
+cd73:
+  display: CD73
+  synonyms:
+    - CD73
+    - NT5E
+
+inos:
+  display: iNOS
+  synonyms:
+    - iNOS
+    - NOS2
+    - Inducible Nitric Oxide Synthase
+
+arginase:
+  display: Arginase
+  synonyms:
+    - Arginase
+    - Arginase 1
+    - Arg1
+
+gamma_delta_tcr:
+  display: gamma delta TCR
+  synonyms:
+    - gamma delta TCR
+    - γδ TCR
+    - TCRγδ
+
+nkp46:
+  display: NKp46
+  synonyms:
+    - NKp46
+    - NCR1
+
+cd14:
+  display: CD14
+  synonyms:
+    - CD14
+
+cd1c:
+  display: CD1c
+  synonyms:
+    - CD1c
+
+pd1:
+  display: PD1
+  synonyms:
+    - PD1
+    - PD-1
+    - CD279
+
+casp3:
+  display: CASP3
+  synonyms:
+    - CASP3
+    - Caspase-3
+    - Cleaved Caspase-3
+    - Cleaved CASP3
+
+mki67:
+  display: MKI67
+  synonyms:
+    - MKI67
+    - Ki-67
+    - Ki67
+
+cd20:
+  display: CD20
+  synonyms:
+    - CD20
+    - MS4A1
+
+cd3:
+  display: CD3
+  synonyms:
+    - CD3
+    - CD3E
+
+ctla4:
+  display: CTLA-4
+  synonyms:
+    - CTLA-4
+    - CTLA4
+    - CD152
+
+decorin:
+  display: Decorin
+  synonyms:
+    - Decorin
+    - DCN
