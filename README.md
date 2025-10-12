@@ -51,12 +51,8 @@ The YAML will contain the following sections with suggested values listed.
 **1. General**
 ```
 seed: 42                                          # Seed for reproducibility
-paths:
-  input_folder: data/raw                          # Folder with raw/preprocessed images
-  output_folder: results/masks                    # Folder for output masks
-  panel_file: data/panels/ws_panel.csv            # Panel file for *all* provided images
-  mask_metadata_folder: results/mask_metadata     # Folder for mask metadata
-  mask_qc_folder: results/mask_qc                 # Folder for mask overlay QC plots
+input_folder: data/raw                            # Folder with raw/preprocessed images
+panel_file: data/panels/ws_panel.csv              # Panel file for *all* provided images
 ```
 **2. Preprocessing**
 ```
@@ -93,6 +89,10 @@ preprocessing:
 **3. Tissue Mask**
 ```
 tissue_mask:
+  mask_folder: results/tissue_masks/masks         # Folder for output masks
+  metadata_folder: results/tissue_masks/metadata  # Folder for mask metadata
+  qc_folder: results/tissue_masks/qc              # Folder for mask overlay QC plots
+
   mask_generation_markers:                        # Markers to define the tissue mask upon (can be left empty)
     - pan_cytokeratin                             # Note: if no markers are provided, the tissue mask will be 
     - vimentin                                    #       generated on all available channels (after 
@@ -172,29 +172,34 @@ ws_imc_workflows/
 │       ├── panel_processed_data.csv
 │       └── ...
 └── results/
-    ├── masks/
-    │   ├── sample_01_mask.tiff
-    │   ├── sample_02_mask.tiff
-    │   └── ...
-    ├── mask_metadata/
-    │   ├── sample_01_mask_metadata.csv
-    │   ├── sample_02_mask_metadata.csv
-    │   └── ...
-    └── mask_qc/
-        ├── sample_01_mask_qc.png
-        ├── sample_02_mask_qc.png
-        └── ...
+    ├── tissue_masks/
+    │   ├── masks/
+    │   │   ├── sample_01_mask.tiff
+    │   │   ├── sample_01_mask.tiff
+    │   │   ├── sample_02_mask.tiff
+    │   │   └── ...
+    │   ├── metadata/
+    │   │   ├── sample_01_mask_metadata.csv
+    │   │   ├── sample_02_mask_metadata.csv
+    │   │   └── ...
+    │   └── qc/
+    │       ├── sample_01_mask_qc.png
+    │       ├── sample_02_mask_qc.png
+    │       └── ...
+    └── patch_extraction/
 ```
 
 **4. Ooutput Files**
 After running the workflow, the following outputs will be generated:
-Output                | File Type | Description                                     | Naming Convention                    | Default Location
---------------------- | --------- | ----------------------------------------------- | ------------------------------------ |-------------------------------------
-Tissue masks          | `.tiff`   | Binary tissue masks per image                   | Input name with `_mask.tiff`         | `paths.output_folder/masks/` 
-Metadata files        | `.csv`    | Threshold values, coverage %, method used, etc. | Input name with `_mask_metadata.csv` | `paths.output_folder/mask_metadata/`
-Quality control plots | `.png`    | Composite and mask overlay visualization        | Input name with `_mask_qc.png`       | `paths.output_folder/mask_qc/`
-
-## Arguments
-
-## Outputs
+Workflow         | Output            | File Type | Description                                     | Naming Convention                    | Default Location
+-----------------| ----------------- | --------- | ----------------------------------------------- | ------------------------------------ |-------------------------------------
+Tissue Masks     | Image Masks       | `.tiff`   | Binary tissue masks per image                   | `{wsi_id}_mask.tiff`                 | `tissue_mask.mask_folder` 
+Tissue Masks     | Metadata          | `.csv`    | Threshold values, coverage %, method used, etc. | `{wsi_id}_mask_metadata.csv`         | `tissue_mask.metadata_folder`
+Tissue Masks     | QC Plots          | `.png`    | Composite and mask overlay visualization        | `{wsi_id}_mask_qc.png`               | `tissue_mask.qc_folder`
+Patch Extraction | Patches           | `.zarr`   | Patches extracted from preprocessed WSI         | `{wsi_id}_x{}_y{}_patch_{patch_idx`} | `patch_extraction.patch_folder.patches`
+Patch Extraction | Patch Masks       | `.json`   | Binary tissue masks per patch                   | `{wsi_id}_x{}_y{}_patch_{patch_idx`} | `patch_extraction.patch_folder.masks`
+Patch Extraction | Manifest          | `.csv`    | Patch ID, WSI ID, and patch metadata            | `manifest.csv`                       | `patch_extraction.patch_folder.metadata`
+Patch Extraction | Image Statistics  | `.csv`    | Number of attempted and valid patches per image | `wsi_statistics.csv`                 | `patch_extraction.patch_folder.metadata`
+Patch Extraction | Cohort Statistics | `.json`   | Total attempted and valid patches of the cohort | `cohort_statistics.json`             | `patch_extraction.patch_folder.metadata`
+Both Workflows   | WSI ID Mapping    | `.csv`    | Mapping for internal WSI ID to image filename   | `id_mapping.csv`                     | `id_mapping_file`
 
