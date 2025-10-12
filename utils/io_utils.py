@@ -285,10 +285,11 @@ def generate_wsi_id_mapping(img_files, config):
 
     # Sort the files before mapping them to IDs for reproducibility
     img_files = sorted(img_files)
-    file_mapper = {str(f): f"wsi_{i}" for i, f in enumerate(img_files)}
-
-    # Save the mapping file
-    with open(id_mapping_file, 'w') as f:
-        json.dump(file_mapper, f, indent = 2)
-
+    file_mapper = [
+        {'wsi_id': f"wsi_{i}", 'file_path': str(f)}
+        for i, f in enumerate(img_files)
+    ]
+    
+    # Save the mapping file as a CSV
+    pd.DataFrame(file_mapper).to_csv(id_mapping_file, index = False)
     return file_mapper

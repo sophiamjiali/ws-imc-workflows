@@ -5,7 +5,7 @@
 seed: 42
 input_folder: data/raw
 panel_file: data/panels/ws_panel.csv
-id_mapping_file: data/id_mappings/id_mapping.json
+id_mapping_file: data/id_mappings/id_mapping.csv
 
 # ==========| Preprocessing |==================================================
 
