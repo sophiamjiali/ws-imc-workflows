@@ -7,7 +7,6 @@ import xarray as xr
 import os
 import re
 import numpy as np
-import json
 
 
 def load_input_paths(config):

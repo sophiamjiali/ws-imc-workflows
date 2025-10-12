@@ -12,6 +12,7 @@ dependencies:
   - xarray
   - pyyaml
   - tifffile
+  - zarr
   - pip
   - pip:
     - readimc
