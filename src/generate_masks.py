@@ -17,7 +17,8 @@ from utils.io_utils import (
     load_mask_generation_panel,
     save_tissue_mask,
     save_mask_metadata,
-    save_mask_qc
+    save_mask_qc,
+    generate_wsi_id_mapping
 )
 from utils.mask_utils import (
     determine_gmm_tissue_threshold, 
@@ -58,6 +59,7 @@ def main():
     args = parse_arguments()
     config = load_config(args.config)
     img_files, file_type = load_input_paths(config)
+    id_mapper = generate_wsi_id_mapping(img_files, config)
     panel = load_panel(img_files[0], file_type, config)
 
     # Fetch mask generation markers if provided
@@ -66,12 +68,12 @@ def main():
 
     # Generate a tissue mask for each input image
     for path in img_files:
-        img_name = path.stem
 
-        # Load the image
+        # Map the filepath to an internal WSI ID
+        img_id = id_mapper[str(path)]
+
+        # Load the image and filter for markers used for mask generation
         img = load_image(path, file_type, panel)
-
-        # Filter for markers used for mask generation
         composite = img.sel(channel = img['metal_tag'].isin(mask_metals))
 
         # Preprocess the image if toggled
@@ -95,20 +97,20 @@ def main():
         )
 
         # Save the mask as the image's filename with '_mask.tiff' suffix
-        save_tissue_mask(mask, img_name, config)
+        save_tissue_mask(mask, img_id, config)
 
         # Save the mask generation metadata if toggled
         if args.save_metadata:
             metadata = {**threshold_metadata, **mask_metadata}
-            save_mask_metadata(metadata, img_name, config)
+            save_mask_metadata(metadata, img_id, config)
 
         # Generate and save a quality control (QC) plot if toggled
         if args.save_qc:
             qc_plot = generate_mask_qc_plot(
-                mask, composite, img_name, mask_panel,
+                mask, composite, img_id, mask_panel,
                 threshold_metadata, mask_metadata, config
             )
-            save_mask_qc(qc_plot, img_name, config)
+            save_mask_qc(qc_plot, img_id, config)
 
 
 if __name__ == '__main__':

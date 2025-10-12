@@ -242,5 +242,4 @@ def generate_mask_qc_plot(mask, composite, image_name, mask_panel,
     fig.text(0.65, 0.03, rgb_caption, ha = 'center',
              fontsize = 9, color = 'black')
 
-    #fig.tight_layout(rect = [0, 0.08, 1, 0.90])
     return fig

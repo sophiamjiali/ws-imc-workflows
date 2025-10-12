@@ -7,17 +7,20 @@ import xarray as xr
 import os
 import re
 import numpy as np
+import json
 
 
 def load_input_paths(config):
     # Loads and returns a list of .mcd file paths
 
     # Verify the input folder exists
-    input_path = config.get('paths', {}).get('input_folder', None)
-    input_folder = Path(input_path)
-    if not input_folder.exists():
+    input_folder = Path(config.get('input_folder', None))
+
+    if input_folder is None:
+        raise ValueError("Config must provide 'input_folder'")
+    elif not input_folder.exists():
         raise FileNotFoundError(f"Input folder {input_folder} does not exist.")
-    
+
     # Verify files exist in the folder and their type
     mcd_files = list(input_folder.glob("*.mcd"))
     tiff_files = list(input_folder.glob("*.tiff"))
@@ -58,7 +61,7 @@ def load_panel(mcd_file, file_type, config):
     # markers are uniformly present in all input imgs 
 
     # Verify the panel exists
-    panel_path = config.get('paths', {}).get('panel_file', None)
+    panel_path = config.get('panel_file', None)
     panel_file = Path(panel_path)
     if not panel_file.exists():
         raise FileNotFoundError(f"Panel {panel_file} does not exist")
@@ -223,14 +226,14 @@ def save_tissue_mask(tissue_mask, img_name, config):
     # '_mask.tiff' suffix to the output folder specified in the configurations
 
     # If the output folder was not initialized, create it using its path
-    output_folder = config.get('paths', {}).get('output_folder', None)
+    mask_folder = Path(config.get('tissue_mask', {})
+                           .get('mask_folder', None))
 
-    if not output_folder:
-        output_folder.mkdir(parents = True, exist_ok = True)
-        print(f"The provided output folder was not initialized, " + 
-              f"creating directory {output_folder}")
+    if mask_folder is None:
+        raise ValueError("Config must provide 'tissue_mask.mask_folder'")
+    mask_folder.mkdir(parents = True, exist_ok = True)
         
-    out_path = os.path.join(output_folder, img_name + "_mask.tiff")
+    out_path = os.path.join(mask_folder, img_name + "_mask.tiff")
     tf.imwrite(out_path, tissue_mask.astype(np.uint8))
 
 
@@ -240,15 +243,12 @@ def save_mask_metadata(metadata, img_name, config):
     # configurations
 
     # If a metadata folder was not provided, create one
-    metadata_folder = config.get('paths', {}).get('mask_metadata_folder', None)
-
-    if not metadata_folder:
-        metadata_folder = os.path.join(
-            os.path.join(config['paths']['output_folder']), 'metadata'
-        ).mkdir(parents = True, exist_ok = True)
-
-        print("No metadata folder specified in the configuration. Using" +
-              f"default {metadata_folder}.")
+    metadata_folder = Path(config.get('tissue_mask', {})
+                                 .get('metadata_folder', None))
+    
+    if metadata_folder is None:
+        raise ValueError("Config must provide 'tissue_mask.metadata_folder'")
+    metadata_folder.mkdir(parents = True, exist_ok = True)
         
     # Save the metadata as a CSV in the folder
     out_path = os.path.join(metadata_folder, img_name + "_metadata.csv")
@@ -262,16 +262,33 @@ def save_mask_qc(qc_plot, img_name, config):
     # configurations
 
     # If a quality control folder was not provided, create one
-    qc_folder = config.get('paths', {}).get('mask_qc_folder', None)
+    qc_folder = Path(config.get('tissue_mask', {}).get('qc_folder', None))
 
-    if not qc_folder:
-        qc_folder = os.path.join(
-            os.path.join(config['paths']['output_folder']), 'qc'
-        ).mkdir(parents = True, exist_ok = True)
-
-        print("No quality control (qc) folder specified in the configuration." +
-              f" Using default {qc_folder}.")
+    if qc_folder is None:
+        raise ValueError("Config must provide 'tissue_mask.qc_folder'")
+    qc_folder.mkdir(parents = True, exist_ok = True)
         
     # Save the QC plot as a PNG in the folder
     out_path = os.path.join(qc_folder, img_name + "_qc.png")
     qc_plot.savefig(out_path, dpi = 300, bbox_inches = 'tight')
+
+
+def generate_wsi_id_mapping(img_files, config):
+    # Generates, returns, and saves a mapping from WSI file paths to internal 
+    # WSI IDs
+
+    # If a mapping ID folder was not provided, create one
+    id_mapping_file = Path(config.get('id_mapping_file', None))
+    if id_mapping_file is None:
+        raise ValueError("Config must provide 'id_mapping_file'")
+    id_mapping_file.parent.mkdir(parents = True, exist_ok = True)
+
+    # Sort the files before mapping them to IDs for reproducibility
+    img_files = sorted(img_files)
+    file_mapper = {str(f): f"wsi_{i}" for i, f in enumerate(img_files)}
+
+    # Save the mapping file
+    with open(id_mapping_file, 'w') as f:
+        json.dump(file_mapper, f, indent = 2)
+
+    return file_mapper

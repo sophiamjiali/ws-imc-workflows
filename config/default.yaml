@@ -1,17 +1,13 @@
 
-# Required field
+# ==========| General |========================================================
+
+# Required fields
 seed: 42
+input_folder: data/raw
+panel_file: data/panels/ws_panel.csv
+id_mapping_file: data/id_mappings/id_mapping.json
 
-paths:
-
-  # Required fields
-  input_folder: data/raw
-  output_folder: results/masks
-  panel_file: data/panels/ws_panel.csv
-  
-  # Not required, defaults provided: only if metadata and/or QC are enabled
-  mask_metadata_folder: results/mask_metadata
-  mask_qc_folder: results/mask_qc
+# ==========| Preprocessing |==================================================
 
 # Not required, defaults provided: only if preprocessing is enabled
 preprocessing:
@@ -45,8 +41,16 @@ preprocessing:
   winsorization:
     limits: [0.005, 0.005]
 
+# ==========| Tissue Mask |====================================================
 
 tissue_mask:
+
+  # Required
+  mask_folder: results/tissue_masks/masks
+
+  # Not required, defaults provided: only required when metadata/QC are enabled
+  metadata_folder: results/tissue_masks/metadata
+  qc_folder: results/tissue_masks/qc
 
   # Not required: can be left empty and full panel will be used
   mask_generation_markers: 
@@ -71,3 +75,13 @@ tissue_mask:
     - cd45
     - col1a2
   
+# ==========| Patch Extraction |===============================================
+  
+patch_extraction:
+
+  # Required
+  patch_folder: results/patch_extraction/patches.zarr
+  mask_folder: results/tissue_masks/masks
+  patch_size: [128, 128]
+  stride: 0.25
+  min_tissue_coverage: 0.50

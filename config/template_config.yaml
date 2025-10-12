@@ -1,19 +1,11 @@
 
 # ==========| General |========================================================
 
-# Required field
+# Required fields
 seed: 
-
-paths:
-
-  # Required fields
-  input_folder: 
-  output_folder: 
-  panel_file: 
-  
-  # Not required, defaults provided: only if metadata and/or QC are enabled
-  mask_metadata_folder: 
-  mask_qc_folder: 
+input_folder: 
+panel_file: 
+id_mapping_file: 
 
 # ==========| Preprocessing |==================================================
 
@@ -28,8 +20,6 @@ preprocessing:
     apply_background_subtraction: 
     apply_winsorization: 
     apply_min_max_scaling: 
-
-  rgb_markers:
 
   background_stains: 
 
@@ -52,7 +42,12 @@ preprocessing:
 
 # ==========| Tissue Mask |====================================================
 
-tissue_mask:
+# Required
+  mask_folder: 
+
+  # Not required, defaults provided: only required when metadata/QC are enabled
+  metadata_folder: 
+  qc_folder: 
 
   # Not required: can be left empty and full panel will be used
   mask_generation_markers: 
@@ -60,7 +55,7 @@ tissue_mask:
   # Not required, defaults provided: only if functions are toggled
   min_tissue_threshold: 
   small_object_threshold: 
-  small_hole_threshold: 
+  small_hole_threshold:
 
   # Not required: only if QC plots are enabled
   rgb_markers:
@@ -68,4 +63,10 @@ tissue_mask:
 # ==========| Patch Extraction |===============================================
 
 patch_extraction:
-  - test
+
+  # Required
+  patch_folder: 
+  mask_folder: 
+  patch_size: 
+  stride: 
+  min_tissue_coverage: 
